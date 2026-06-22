@@ -1,0 +1,152 @@
+<div class="page">
+  <!-- Search section — matches approved design mockup -->
+  <div class="search-wrap">
+    <div class="search-card" #searchContainer>
+      <div class="search-title">Search</div>
+
+      <div class="search-row">
+        <div class="search-field">
+          <input
+            #searchInput
+            type="text"
+            class="search-input"
+            placeholder="Search Products"
+            aria-label="Search products"
+            [(ngModel)]="inputValue"
+            (ngModelChange)="onInputChange($event)"
+            (keydown)="onKeyDown($event)"
+            (focus)="onInputFocus()"
+          />
+          <button
+            *ngIf="inputValue.length > 0"
+            class="clear-btn"
+            aria-label="Clear search"
+            (click)="clearInput()"
+            type="button"
+          >
+            ✕
+          </button>
+
+          <!-- Autocomplete suggestions -->
+          <div class="suggestions" role="listbox" *ngIf="showSuggestions && suggestions.length > 0">
+            <div
+              *ngFor="let p of suggestions; let i = index"
+              class="suggestion"
+              role="option"
+              [class.suggestion-active]="highlightedIndex === i"
+              (mouseenter)="highlightedIndex = i"
+              (click)="selectSuggestion(p)"
+            >
+              <div class="suggestion-name">{{ p.name }}</div>
+              <div class="suggestion-desc">{{ p.description }}</div>
+            </div>
+          </div>
+        </div>
+
+        <select class="category-select" [(ngModel)]="category" aria-label="Category">
+          <option value="">Category</option>
+          <option *ngFor="let c of categories" [value]="c">{{ c }}</option>
+        </select>
+
+        <button class="search-btn" type="button" (click)="search()">Search</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo control -->
+  <div class="body">
+    <div class="demo-banner">
+      <span>Demo control — toggle to simulate a backend failure on the next search.</span>
+      <label class="demo-toggle">
+        <input type="checkbox" [(ngModel)]="simulateFailure" />
+        Simulate failure
+      </label>
+    </div>
+
+    <!-- Selected product detail view -->
+    <div class="fade-in" *ngIf="selectedProduct">
+      <button class="back-btn" type="button" (click)="backToSearch()">‹ Back to search</button>
+      <div class="product-detail">
+        <span class="product-detail-category">{{ selectedProduct.category }}</span>
+        <h2 class="product-detail-name">{{ selectedProduct.name }}</h2>
+        <p class="product-detail-desc">{{ selectedProduct.description }}</p>
+        <div class="product-detail-note">
+          Product detail page — reached directly from a search suggestion.
+        </div>
+      </div>
+    </div>
+
+    <ng-container *ngIf="!selectedProduct">
+      <!-- Idle state -->
+      <div class="state-block" *ngIf="searchState === 'idle'">
+        <div class="state-icon">⌕</div>
+        <p>Enter a keyword, pick a category, or both — then search.</p>
+      </div>
+
+      <!-- Loading state -->
+      <div class="state-block" *ngIf="searchState === 'loading'">
+        <div class="spinner"></div>
+        <p>Searching…</p>
+      </div>
+
+      <!-- Error state -->
+      <div class="state-block fade-in" *ngIf="searchState === 'error'">
+        <div class="error-icon">⚠</div>
+        <p class="error-title">Search is temporarily unavailable.</p>
+        <p class="error-sub">Please try again later.</p>
+        <button class="retry-btn" type="button" (click)="retry()">↻ Retry</button>
+      </div>
+
+      <!-- Success state -->
+      <div class="fade-in" *ngIf="searchState === 'success'">
+        <div class="spelling-banner" *ngIf="spellingSuggestion">
+          Did you mean:
+          <button class="spelling-link" type="button" (click)="useSpellingSuggestion(spellingSuggestion)">
+            {{ spellingSuggestion }}
+          </button>?
+        </div>
+
+        <div class="state-block" *ngIf="results.length === 0">
+          <p>No matches for your search. Try different terms.</p>
+        </div>
+
+        <ng-container *ngIf="results.length > 0">
+          <div class="results-meta">
+            <span>
+              {{ results.length }} result{{ results.length !== 1 ? 's' : '' }}
+              <ng-container *ngIf="submittedTerm"> for "<strong>{{ submittedTerm }}</strong>"</ng-container>
+              <ng-container *ngIf="submittedCategory"> in <strong>{{ submittedCategory }}</strong></ng-container>
+            </span>
+            <span class="page-indicator" *ngIf="totalPages > 1">Page {{ page }} of {{ totalPages }}</span>
+          </div>
+
+          <div class="results-list">
+            <div class="result-card" *ngFor="let p of pagedResults" (click)="selectSuggestion(p)">
+              <div class="result-main">
+                <div class="result-name-row">
+                  <span class="result-name">{{ p.name }}</span>
+                  <span class="result-category">{{ p.category }}</span>
+                </div>
+                <p class="result-desc">{{ p.description }}</p>
+              </div>
+              <span class="match-badge" *ngIf="p.matchLabel">{{ p.matchLabel }}</span>
+            </div>
+          </div>
+
+          <div class="pagination" *ngIf="totalPages > 1">
+            <button class="page-nav" [disabled]="page === 1" (click)="goToPage(page - 1)" aria-label="Previous page">‹</button>
+            <button
+              *ngFor="let p of pageNumbers"
+              class="page-num"
+              [class.page-num-active]="p === page"
+              (click)="goToPage(p)"
+            >
+              {{ p }}
+            </button>
+            <button class="page-nav" [disabled]="page === totalPages" (click)="goToPage(page + 1)" aria-label="Next page">›</button>
+          </div>
+        </ng-container>
+      </div>
+    </ng-container>
+  </div>
+</div>
